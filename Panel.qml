@@ -277,6 +277,140 @@ Panel {
                     elide: Text.ElideRight
                 }
 
+                Column {
+                    width: parent.width
+                    visible: root.activeView === "settings"
+                    height: visible ? implicitHeight : 0
+                    spacing: Style.space(10)
+
+                    Row {
+                        spacing: Style.space(6)
+
+                        Text {
+                            text: "←"
+                            color: Color.accent
+                            font.family: root.uiFont
+                            font.pixelSize: 16
+                            font.bold: true
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -8
+                                onClicked: root.activeView = "sounds"
+                            }
+                        }
+
+                        Text {
+                            text: "Settings"
+                            color: Color.muted
+                            font.family: root.uiFont
+                            font.pixelSize: 13
+                            MouseArea {
+                                anchors.fill: parent
+                                anchors.margins: -4
+                                onClicked: root.activeView = "sounds"
+                            }
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: "Keyboard input"
+                        color: Color.popups.text
+                        font.family: root.uiFont
+                        font.pixelSize: 17
+                        font.bold: true
+                    }
+
+                    Text {
+                        width: parent.width
+                        text: "Choose the keyboard OmaVibes listens to. Your choice is saved and survives reconnects."
+                        color: Color.muted
+                        font.family: root.uiFont
+                        font.pixelSize: 13
+                        wrapMode: Text.WordWrap
+                    }
+
+                    Column {
+                        width: parent.width
+                        spacing: Style.space(6)
+
+                        Repeater {
+                            model: omaState.keyboardDevices
+
+                            delegate: Rectangle {
+                                width: parent.width
+                                height: 58
+                                radius: 10
+                                property bool selected: modelData.path === omaState.inputDevicePath
+                                color: selected
+                                    ? Style.selectedFillFor(Color.popups.text, Color.accent)
+                                    : keyboardMouse.containsMouse
+                                        ? Style.hoverFillFor(Color.popups.text, Color.accent)
+                                        : Color.popups.background
+                                border.width: 1
+                                border.color: selected ? Color.accent : Color.popups.border
+
+                                Column {
+                                    anchors.left: parent.left
+                                    anchors.right: selectedMark.left
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    anchors.leftMargin: 12
+                                    anchors.rightMargin: 8
+                                    spacing: 2
+
+                                    Text {
+                                        width: parent.width
+                                        text: modelData.name
+                                        color: Color.popups.text
+                                        font.family: root.uiFont
+                                        font.pixelSize: 14
+                                        font.bold: true
+                                        elide: Text.ElideRight
+                                    }
+                                    Text {
+                                        width: parent.width
+                                        text: modelData.path
+                                        color: Color.muted
+                                        font.family: root.uiFont
+                                        font.pixelSize: 10
+                                        elide: Text.ElideMiddle
+                                    }
+                                }
+
+                                Text {
+                                    id: selectedMark
+                                    anchors.right: parent.right
+                                    anchors.rightMargin: 12
+                                    anchors.verticalCenter: parent.verticalCenter
+                                    visible: parent.selected
+                                    text: "✓"
+                                    color: Color.accent
+                                    font.family: root.uiFont
+                                    font.pixelSize: 18
+                                    font.bold: true
+                                }
+
+                                MouseArea {
+                                    id: keyboardMouse
+                                    anchors.fill: parent
+                                    hoverEnabled: true
+                                    onClicked: omaState.selectInputDevice(modelData.path)
+                                }
+                            }
+                        }
+                    }
+
+                    Text {
+                        width: parent.width
+                        visible: omaState.keyboardDevices.length === 0
+                        text: "No keyboard devices found. Make sure the device is connected and your user can read /dev/input."
+                        color: Color.urgent
+                        font.family: root.uiFont
+                        font.pixelSize: 13
+                        wrapMode: Text.WordWrap
+                    }
+                }
+
                 // ─────────────────────────
                 // SEARCH
                 // ─────────────────────────
@@ -285,7 +419,7 @@ Panel {
                     id: searchField
 
                     width: parent.width
-                    height: 44
+                    height: 39
                     visible: root.activeView === "sounds"
 
                     placeholderText: "Search soundpacks..."
@@ -620,21 +754,59 @@ Panel {
                     }
                 }
 
-                Text {
+                Row {
                     width: parent.width
+                    height: 44
                     visible: root.activeView === "sounds"
+                    spacing: Style.space(10)
 
-                    text:
-                        omaState.isPlaying && omaState.currentPack
-                            ? "Now playing: " +
-                              root.formatPackName(omaState.currentPack)
-                            : "Now playing: None"
+                    Text {
+                        width: parent.width - keyboardSettings.width - parent.spacing
+                        anchors.verticalCenter: parent.verticalCenter
 
-                    color: Color.muted
-                    font.family: root.uiFont
-                    font.pixelSize: 15
-                    font.bold: true
-                    elide: Text.ElideRight
+                        text:
+                            omaState.isPlaying && omaState.currentPack
+                                ? "Now playing: " +
+                                  root.formatPackName(omaState.currentPack)
+                                : "Now playing: None"
+
+                        color: Color.muted
+                        font.family: root.uiFont
+                        font.pixelSize: 15
+                        font.bold: true
+                        elide: Text.ElideRight
+                    }
+
+                    Rectangle {
+                        id: keyboardSettings
+                        width: 34
+                        height: 34
+                        y: Math.round((parent.height - height) / 2)
+                        radius: 12
+                        color: settingsMouse.containsMouse
+                            ? Style.hoverFillFor(Color.popups.text, Color.accent)
+                            : "transparent"
+                        border.width: 2
+                        border.color: Color.accent
+
+                        Text {
+                            anchors.centerIn: parent
+                            text: "⚙"
+                            color: Color.accent
+                            font.family: root.uiFont
+                            font.pixelSize: 17
+                        }
+
+                        MouseArea {
+                            id: settingsMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            onClicked: {
+                                omaState.loadKeyboardDevices()
+                                root.activeView = "settings"
+                            }
+                        }
+                    }
                 }
 
                 // ─────────────────────────
@@ -2793,4 +2965,3 @@ Connections {
             }
         }
     }
-

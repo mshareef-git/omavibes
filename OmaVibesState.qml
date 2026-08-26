@@ -63,6 +63,11 @@ QtObject {
     property string currentPack: ""
     property bool isPlaying: false
     property var packVolumes: ({})
+    property var keyboardDevices: []
+    property string inputDevicePath: ""
+    property bool stateLoaded: false
+    property bool inputDeviceLoaded: false
+    property bool playbackRestored: false
     readonly property int defaultVolume: 3
 
     function volumeFor(packName) {
@@ -71,6 +76,14 @@ QtObject {
 
     function shellQuote(value) {
         return "'" + String(value).replace(/'/g, "'\\''") + "'"
+    }
+
+    function restorePlayback() {
+        if (playbackRestored || !stateLoaded || !inputDeviceLoaded || !currentPack || !inputDevicePath)
+            return
+
+        playbackRestored = true
+        play(currentPack)
     }
 
     function play(packName) {
@@ -116,6 +129,27 @@ QtObject {
         play(p.name)
     }
 
+    function loadKeyboardDevices() {
+        keyboardDeviceProc.running = true
+    }
+
+    function selectInputDevice(path) {
+        if (!path)
+            return
+
+        inputDevicePath = path
+        const quotedPath = shellQuote(path)
+        writeInputDeviceProc.command = [
+            "bash", "-c",
+            "mkdir -p ~/.config/wayvibes && printf '%s' " + quotedPath +
+                " > ~/.config/wayvibes/input_device_path"
+        ]
+        writeInputDeviceProc.running = true
+
+        if (currentPack)
+            play(currentPack)
+    }
+
     property Process stopProc: Process {
         command: ["pkill", "-x", "wayvibes"]
     }
@@ -158,6 +192,32 @@ QtObject {
 
     property Process launchProc: Process {}
 
+    property Process keyboardDeviceProc: Process {
+        command: [state.pluginBin, "--list-devices"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const devices = text.trim().split("\n").filter(Boolean).map(function(line) {
+                    const parts = line.split("\t")
+                    return { path: parts[0], name: parts.slice(1).join("\t") || parts[0] }
+                })
+                state.keyboardDevices = devices
+            }
+        }
+    }
+
+    property Process inputDeviceReadProc: Process {
+        command: ["bash", "-c", "cat ~/.config/wayvibes/input_device_path 2>/dev/null || true"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                state.inputDevicePath = text.trim()
+                state.inputDeviceLoaded = true
+                state.restorePlayback()
+            }
+        }
+    }
+
+    property Process writeInputDeviceProc: Process {}
+
     function load() {
         readProc.running = true
     }
@@ -189,6 +249,8 @@ QtObject {
                     state.isPlaying = false
                 } catch (e) {
                 }
+                state.stateLoaded = true
+                state.restorePlayback()
             }
         }
     }
@@ -1399,6 +1461,8 @@ QtObject {
 
     Component.onCompleted: {
         load()
+        loadKeyboardDevices()
+        inputDeviceReadProc.running = true
         loadAnalytics()
         loadTrackingMode()
     }

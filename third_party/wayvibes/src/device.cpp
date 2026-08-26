@@ -20,91 +20,98 @@
 #define BLUE "\033[34m"
 #define CYAN "\033[36m"
 
-std::string findKeyboardDevices() {
+namespace {
+
+struct KeyboardDevice {
+  std::string eventDevice;
+  std::string name;
+};
+
+std::vector<KeyboardDevice> findKeyboardDeviceEntries() {
   DIR *dir = opendir(deviceDir);
   if (!dir) {
     std::cerr << RED << "Failed to open /dev/input directory" << RESET << std::endl;
-    return "";
+    return {};
   }
 
-  std::vector<std::string> devices;
+  std::vector<KeyboardDevice> devices;
   struct dirent *entry;
 
-  while ((entry = readdir(dir)) != NULL) {
-    // if (!strstr(entry->d_name, "mouse")) {
-    if (strncmp(entry->d_name, "event", 5) == 0) {
-      devices.push_back(entry->d_name);
+  while ((entry = readdir(dir)) != nullptr) {
+    if (strncmp(entry->d_name, "event", 5) != 0) {
+      continue;
     }
-  }
 
-  closedir(dir);
-
-  if (devices.empty()) {
-    std::cerr << RED << "No input devices found!" << RESET << std::endl;
-    return "";
-  }
-
-  std::vector<std::string> filteredDevices;
-
-  std::cout << CYAN << "Available Keyboard devices:" << RESET << std::endl;
-
-  for (size_t i = 0, displayIndex = 1; i < devices.size(); ++i) {
-    std::string devicePath = deviceDir + devices[i];
+    const std::string eventDevice = entry->d_name;
+    const std::string devicePath = deviceDir + eventDevice;
     struct libevdev *dev = nullptr;
-    int fd = open(devicePath.c_str(), O_RDONLY);
+    const int fd = open(devicePath.c_str(), O_RDONLY);
     if (fd < 0) {
-      std::cerr << RED << "Error opening " << devicePath << RESET << std::endl;
       continue;
     }
 
-    int rc = libevdev_new_from_fd(fd, &dev);
-    if (rc < 0) {
-      std::cerr << RED << "Failed to create evdev device for " << devicePath << RESET
-                << std::endl;
-      close(fd);
-      continue;
+    const int rc = libevdev_new_from_fd(fd, &dev);
+    if (rc >= 0 && libevdev_has_event_code(dev, EV_KEY, KEY_A)) {
+      devices.push_back({
+          eventDevice,
+          libevdev_get_name(dev) ? libevdev_get_name(dev) : eventDevice,
+      });
     }
 
-    if (libevdev_has_event_code(dev, EV_KEY, KEY_A)) {
-      std::cout << CYAN << BOLD << displayIndex << ". " << RESET << YELLOW
-                << libevdev_get_name(dev) << RESET << " (" << devices[i] << ")"
-                << std::endl;
-      filteredDevices.push_back(devices[i]);
-      displayIndex++;
+    if (dev) {
+      libevdev_free(dev);
     }
-
-    libevdev_free(dev);
     close(fd);
   }
 
-  if (filteredDevices.empty()) {
+  closedir(dir);
+  return devices;
+}
+
+} // namespace
+
+std::string resolveToByIdPath(const std::string &eventDevice);
+
+void listKeyboardDevices() {
+  for (const auto &device : findKeyboardDeviceEntries()) {
+    const std::string byIdPath = resolveToByIdPath(device.eventDevice);
+    const std::string path =
+        byIdPath.empty() ? deviceDir + device.eventDevice : byIdPath;
+    std::cout << path << "\t" << device.name << std::endl;
+  }
+}
+
+std::string findKeyboardDevices() {
+  const std::vector<KeyboardDevice> devices = findKeyboardDeviceEntries();
+  if (devices.empty()) {
     std::cerr << RED << "No suitable keyboard input devices found!" << RESET << std::endl;
     return "";
   }
 
-  if (filteredDevices.size() == 1) {
-    std::cout << CYAN << "Selecting this keyboard device." << RESET << std::endl;
-    return filteredDevices[0];
+  std::cout << CYAN << "Available Keyboard devices:" << RESET << std::endl;
+  for (size_t i = 0; i < devices.size(); ++i) {
+    std::cout << CYAN << BOLD << i + 1 << ". " << RESET << YELLOW
+              << devices[i].name << RESET << " (" << devices[i].eventDevice << ")"
+              << std::endl;
   }
 
-  std::string selectedDevice;
-  bool validChoice = false;
+  if (devices.size() == 1) {
+    std::cout << CYAN << "Selecting this keyboard device." << RESET << std::endl;
+    return devices.front().eventDevice;
+  }
 
-  while (!validChoice) {
-    std::cout << CYAN << "Select a keyboard input device (1-" << filteredDevices.size()
+  while (true) {
+    std::cout << CYAN << "Select a keyboard input device (1-" << devices.size()
               << "): " << RESET;
     int choice;
     std::cin >> choice;
 
-    if (choice >= 1 && choice <= filteredDevices.size()) {
-      selectedDevice = filteredDevices[choice - 1];
-      validChoice = true;
-    } else {
-      std::cerr << RED << "Invalid choice. Please try again." << RESET << std::endl;
+    if (choice >= 1 && choice <= static_cast<int>(devices.size())) {
+      return devices[choice - 1].eventDevice;
     }
-  }
 
-  return selectedDevice;
+    std::cerr << RED << "Invalid choice. Please try again." << RESET << std::endl;
+  }
 }
 
 std::string resolveToByIdPath(const std::string &eventDevice) {

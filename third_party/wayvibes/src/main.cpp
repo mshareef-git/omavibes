@@ -17,6 +17,7 @@ void printHelp() {
       << "Usage: wayvibes [options] [soundpack_path]\n"
       << "Options:\n"
       << "  --device              Select input device\n"
+      << "  --list-devices        List keyboard-capable input devices\n"
       << "  -v <volume>           Set volume (0.0-10.0) (default: 1.0)\n"
       << "  --background, -bg     Run in background (detached from terminal)\n"
       << "  --analytics-only      Track keyboard analytics without playing sounds\n"
@@ -63,6 +64,9 @@ int main(int argc, char *argv[]) {
       saveInputDevice(configDir);
       return 0;
 
+    } else if (argument == "--list-devices") {
+      listKeyboardDevices();
+      return 0;
     } else if (argument == "-v" && (i + 1) < argc) {
       try {
         volume = std::stof(argv[i + 1]);
@@ -126,12 +130,13 @@ int main(int argc, char *argv[]) {
     std::string devicePath = getInputDevicePath(configDir);
 
     if (devicePath.empty()) {
-      if (!silent) {
-        std::cout
-            << "No device found. Prompting user for a keyboard device."
-            << std::endl;
+      if (silent) {
+        return 1;
       }
 
+      std::cout
+          << "No device found. Prompting user for a keyboard device."
+          << std::endl;
       saveInputDevice(configDir);
       devicePath = getInputDevicePath(configDir);
     }
@@ -156,6 +161,24 @@ int main(int argc, char *argv[]) {
 
   volume = std::clamp(volume, 0.0f, 10.0f);
 
+  std::string devicePath = getInputDevicePath(configDir);
+  if (devicePath.empty()) {
+    if (silent) {
+      return 1;
+    }
+
+    std::cout
+        << "No device found. Prompting user for a keyboard device."
+        << std::endl;
+    saveInputDevice(configDir);
+    devicePath = getInputDevicePath(configDir);
+  }
+
+  if (devicePath.empty()) {
+    std::cerr << "No keyboard input device configured." << std::endl;
+    return 1;
+  }
+
   if (initializeAudioEngine() != MA_SUCCESS) {
     if (!silent) {
       std::cerr << "Failed to initialize audio engine" << std::endl;
@@ -171,27 +194,6 @@ int main(int argc, char *argv[]) {
   std::unordered_map<int, std::string> keySoundMap =
       loadKeySoundMappings(soundpackPath + "/config.json");
 
-  std::string devicePath = getInputDevicePath(configDir);
-
-  if (devicePath.empty()) {
-    if (!silent) {
-      std::cout
-          << "No device found. Prompting user for a keyboard device."
-          << std::endl;
-    }
-
-    saveInputDevice(configDir);
-    devicePath = getInputDevicePath(configDir);
-  }
-
-  if (devicePath.empty()) {
-    if (!silent) {
-      std::cerr << "No keyboard input device configured." << std::endl;
-    }
-
-    uninitializeAudioEngine();
-    return 1;
-  }
 
   runMainLoop(
       devicePath,

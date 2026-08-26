@@ -373,23 +373,68 @@ std::int64_t nextLocalMidnight(std::int64_t epochSeconds) {
 }
 
 bool isWordKey(unsigned int code) {
-  // Alphabetic keys.
-  if (code >= KEY_A && code <= KEY_Z) {
-    return true;
-  }
+  // Alphabetic keys. Linux input key codes are not a contiguous
+  // alphabetical range, so enumerate the letter codes explicitly.
+  switch (code) {
+    case KEY_A:
+    case KEY_B:
+    case KEY_C:
+    case KEY_D:
+    case KEY_E:
+    case KEY_F:
+    case KEY_G:
+    case KEY_H:
+    case KEY_I:
+    case KEY_J:
+    case KEY_K:
+    case KEY_L:
+    case KEY_M:
+    case KEY_N:
+    case KEY_O:
+    case KEY_P:
+    case KEY_Q:
+    case KEY_R:
+    case KEY_S:
+    case KEY_T:
+    case KEY_U:
+    case KEY_V:
+    case KEY_W:
+    case KEY_X:
+    case KEY_Y:
+    case KEY_Z:
+      return true;
 
-  // Number row.
-  if (code >= KEY_1 && code <= KEY_0) {
-    return true;
-  }
+    // Number row.
+    case KEY_1:
+    case KEY_2:
+    case KEY_3:
+    case KEY_4:
+    case KEY_5:
+    case KEY_6:
+    case KEY_7:
+    case KEY_8:
+    case KEY_9:
+    case KEY_0:
+      return true;
 
-  // Numpad digits and decimal point.
-  if (code >= KEY_KP1 && code <= KEY_KP0) {
-    return true;
-  }
+    // Numpad digits.
+    case KEY_KP1:
+    case KEY_KP2:
+    case KEY_KP3:
+    case KEY_KP4:
+    case KEY_KP5:
+    case KEY_KP6:
+    case KEY_KP7:
+    case KEY_KP8:
+    case KEY_KP9:
+    case KEY_KP0:
+      return true;
 
-  if (code == KEY_KPDOT) {
-    return true;
+    case KEY_KPDOT:
+      return true;
+
+    default:
+      break;
   }
 
   // Punctuation that can occur inside a word.
@@ -429,45 +474,36 @@ bool isWordBackspace(unsigned int code) {
 // of keyboard layout, and there is no way to recover typed text, word
 // order, or timing from the resulting counters.
 std::string physicalKeyLabel(unsigned int code) {
-  if (code >= KEY_A && code <= KEY_Z) {
-    static const char *letters =
-        "QWERTYUIOPASDFGHJKLZXCVBNM";
-    // KEY_A..KEY_Z are not contiguous in alphabetical order in
-    // linux/input-event-codes.h, so map each one explicitly instead
-    // of relying on arithmetic offsets.
-    switch (code) {
-      case KEY_A: return "A";
-      case KEY_B: return "B";
-      case KEY_C: return "C";
-      case KEY_D: return "D";
-      case KEY_E: return "E";
-      case KEY_F: return "F";
-      case KEY_G: return "G";
-      case KEY_H: return "H";
-      case KEY_I: return "I";
-      case KEY_J: return "J";
-      case KEY_K: return "K";
-      case KEY_L: return "L";
-      case KEY_M: return "M";
-      case KEY_N: return "N";
-      case KEY_O: return "O";
-      case KEY_P: return "P";
-      case KEY_Q: return "Q";
-      case KEY_R: return "R";
-      case KEY_S: return "S";
-      case KEY_T: return "T";
-      case KEY_U: return "U";
-      case KEY_V: return "V";
-      case KEY_W: return "W";
-      case KEY_X: return "X";
-      case KEY_Y: return "Y";
-      case KEY_Z: return "Z";
-      default: break;
-    }
-    (void)letters;
-  }
-
   switch (code) {
+    // Letters
+    case KEY_A: return "A";
+    case KEY_B: return "B";
+    case KEY_C: return "C";
+    case KEY_D: return "D";
+    case KEY_E: return "E";
+    case KEY_F: return "F";
+    case KEY_G: return "G";
+    case KEY_H: return "H";
+    case KEY_I: return "I";
+    case KEY_J: return "J";
+    case KEY_K: return "K";
+    case KEY_L: return "L";
+    case KEY_M: return "M";
+    case KEY_N: return "N";
+    case KEY_O: return "O";
+    case KEY_P: return "P";
+    case KEY_Q: return "Q";
+    case KEY_R: return "R";
+    case KEY_S: return "S";
+    case KEY_T: return "T";
+    case KEY_U: return "U";
+    case KEY_V: return "V";
+    case KEY_W: return "W";
+    case KEY_X: return "X";
+    case KEY_Y: return "Y";
+    case KEY_Z: return "Z";
+
+    // Number row
     case KEY_1: return "1";
     case KEY_2: return "2";
     case KEY_3: return "3";
@@ -479,6 +515,7 @@ std::string physicalKeyLabel(unsigned int code) {
     case KEY_9: return "9";
     case KEY_0: return "0";
 
+    // Common keys
     case KEY_SPACE: return "SPACE";
     case KEY_BACKSPACE: return "BACKSPACE";
     case KEY_ENTER: return "ENTER";
@@ -486,6 +523,7 @@ std::string physicalKeyLabel(unsigned int code) {
     case KEY_TAB: return "TAB";
     case KEY_ESC: return "ESC";
 
+    // Modifiers
     case KEY_LEFTSHIFT: return "SHIFT";
     case KEY_RIGHTSHIFT: return "SHIFT";
     case KEY_LEFTCTRL: return "CTRL";
@@ -496,6 +534,7 @@ std::string physicalKeyLabel(unsigned int code) {
     case KEY_RIGHTMETA: return "META";
     case KEY_CAPSLOCK: return "CAPSLOCK";
 
+    // Punctuation
     case KEY_MINUS: return "MINUS";
     case KEY_EQUAL: return "EQUAL";
     case KEY_LEFTBRACE: return "LEFTBRACE";
@@ -508,6 +547,7 @@ std::string physicalKeyLabel(unsigned int code) {
     case KEY_DOT: return "DOT";
     case KEY_SLASH: return "SLASH";
 
+    // Navigation
     case KEY_UP: return "UP";
     case KEY_DOWN: return "DOWN";
     case KEY_LEFT: return "LEFT";
@@ -519,9 +559,6 @@ std::string physicalKeyLabel(unsigned int code) {
     case KEY_PAGEDOWN: return "PAGEDOWN";
 
     default:
-      // Bucket everything else (function keys, media keys, numpad,
-      // etc.) into a single label rather than an ever-growing set of
-      // per-code entries. Still just a count, never text.
       return "OTHER";
   }
 }

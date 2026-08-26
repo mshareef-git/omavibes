@@ -35,26 +35,6 @@ It comes with over 40+ sounds across the bundled soundpacks, along with search, 
 OmaVibes uses **wayvibes** as its typing sound runtime. It listens for keyboard input and plays the selected sound effects while you type. The required runtime is bundled with OmaVibes, so no separate `wayvibes` installation is required.
 
 ---
-## Features
-
-* **Omarchy bar integration** — Open OmaVibes directly from the top bar.
-* **40+ typing sounds** — A collection of cozy typing sound effects across the bundled soundpacks.
-* **Soundpack browser** — Browse the available soundpacks from one panel.
-* **Search** — Filter soundpacks instantly by name.
-* **One-click playback** — Select a soundpack to start playing it immediately.
-* **Random playback** — Pick a random soundpack from the available collection.
-* **Turn Off** — Stop the currently playing typing sounds.
-* **Volume control** — Adjust the volume from 1 to 10.
-* **Per-pack volume** — Each soundpack remembers its own volume setting.
-* **Persistent settings** — Soundpack and volume settings are preserved across shell restarts.
-* **Profile** — See your lifetime typing progress, current rank, progress toward the next rank, personal records, and completed achievements.
-* **Gamified ranks** — Lifetime words typed determine your rank, with increasingly difficult tiers to climb.
-* **Achievements** — Unlock typing milestones based on lifetime words, key presses, typing days, and streaks.
-* **Detailed analytics** — Explore daily, weekly, monthly, and lifetime typing statistics.
-* **Key analytics** — See your most-used keys, key frequency, keyboard usage, and other typing statistics.
-* **Theme-aware interface** — Uses Omarchy/Quickshell styling and the active bar font and theme colors.
-* **Local analytics** — Typing statistics stay on the device, and the actual text you type is never stored.
-* **Bundled runtime** — Includes the `wayvibes` executable and bundled soundpacks, so a separate `wayvibes` installation is not required.
 
 ## Requirements
 
@@ -109,13 +89,13 @@ Restart the shell if necessary:
 omarchy restart shell
 ```
 
-## Usage
+## Usage💥
 
 Click the OmaVibes keyboard icon in the Omarchy top bar.
 
 ### Keyboard input
 
-Use the settings cog in the top-right corner of the panel to choose which
+Use the settings cog in the bottom-right corner of the panel to choose which
 keyboard OmaVibes listens to. It lists every keyboard-capable input device,
 including virtual keyboards. OmaVibes saves a stable `/dev/input/by-id` path
 when one is available, then uses that selection the next time playback starts.
@@ -213,6 +193,28 @@ OmaVibes also supports user soundpacks through:
 A custom soundpack can contain the audio files required by `wayvibes` together with its `config.json`.
 
 When a matching user soundpack exists, OmaVibes can use the user version instead of the bundled version.
+
+## Features
+
+* **Omarchy bar integration** — Open OmaVibes directly from the top bar.
+* **40+ typing sounds** — A collection of cozy typing sound effects across the bundled soundpacks.
+* **Soundpack browser** — Browse the available soundpacks from one panel.
+* **Search** — Filter soundpacks instantly by name.
+* **One-click playback** — Select a soundpack to start playing it immediately.
+* **Random playback** — Pick a random soundpack from the available collection.
+* **Turn Off** — Stop the currently playing typing sounds.
+* **Volume control** — Adjust the volume from 1 to 10.
+* **Per-pack volume** — Each soundpack remembers its own volume setting.
+* **Persistent settings** — Soundpack and volume settings are preserved across shell restarts.
+* **Profile** — See your lifetime typing progress, current rank, progress toward the next rank, personal records, and completed achievements.
+* **Gamified ranks** — Lifetime words typed determine your rank, with increasingly difficult tiers to climb.
+* **Achievements** — Unlock typing milestones based on lifetime words, key presses, typing days, and streaks.
+* **Detailed analytics** — Explore daily, weekly, monthly, and lifetime typing statistics.
+* **Key analytics** — See your most-used keys, key frequency, keyboard usage, and other typing statistics.
+* **Theme-aware interface** — Uses Omarchy/Quickshell styling and the active bar font and theme colors.
+* **Local analytics** — Typing statistics stay on the device, and the actual text you type is never stored.
+* **Bundled runtime** — Includes the `wayvibes` executable and bundled soundpacks, so a separate `wayvibes` installation is not required.
+
 
 ## How It Works
 

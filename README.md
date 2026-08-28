@@ -6,7 +6,15 @@ OmaVibes gives you cozy typing sound effects with over 40+ sounds, gamified typi
 <img width="1672" height="941" alt="preview" src="https://github.com/user-attachments/assets/111b2184-2798-4d72-9fbb-856a07cc3771" />
 
 
-https://github.com/user-attachments/assets/1af267b1-29c0-4423-8530-0c5b8d533819
+
+
+https://github.com/user-attachments/assets/6d67f5fa-1d87-4b44-a146-4221f91e008c
+
+
+
+
+
+
 
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/83c98e4f-1c3f-4a95-ab12-eb784362f163" />

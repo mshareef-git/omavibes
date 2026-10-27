@@ -550,11 +550,34 @@ QtObject {
 
     // Lifetime key analytics. Only aggregate counts are used; no text or
     // key sequences are reconstructed here.
+    // Every panel binding that shows a key figure calls these, so one data
+    // update used to re-sum and re-sort keyCounts ~150 times. keyCounts is
+    // only ever replaced, never edited, so compute once per object.
+    readonly property var keyStatsCache: ({})
+
+    function keyStats() {
+        const cache = keyStatsCache
+        if (cache.source !== keyCounts) {
+            let total = 0
+            const sorted = []
+            for (const key in keyCounts) {
+                const count = Number(keyCounts[key] || 0)
+                total += count
+                if (count > 0) sorted.push({ key: key, count: count })
+            }
+            sorted.sort(function(a, b) {
+                if (b.count !== a.count) return b.count - a.count
+                return a.key.localeCompare(b.key)
+            })
+            cache.source = keyCounts
+            cache.total = total
+            cache.sorted = sorted
+        }
+        return cache
+    }
+
     function lifetimeKeyPresses() {
-        let total = 0
-        for (const key in keyCounts)
-            total += Number(keyCounts[key] || 0)
-        return total
+        return keyStats().total
     }
 
     function keyCount(keyLabel) {
@@ -562,16 +585,7 @@ QtObject {
     }
 
     function mostUsedKeys(limit) {
-        const result = []
-        for (const key in keyCounts) {
-            const count = Number(keyCounts[key] || 0)
-            if (count > 0) result.push({ key: key, count: count })
-        }
-        result.sort(function(a, b) {
-            if (b.count !== a.count) return b.count - a.count
-            return a.key.localeCompare(b.key)
-        })
-        return result.slice(0, Math.max(0, Number(limit) || 0))
+        return keyStats().sorted.slice(0, Math.max(0, Number(limit) || 0))
     }
 
     function keyCategoryCounts() {
@@ -1006,8 +1020,13 @@ QtObject {
     property Process analyticsReadProc: Process {
         id: analyticsReadProc
         command: ["bash", "-c", "cat '" + state.analyticsStateFile + "' 2>/dev/null || echo '{}'"]
+        // Polled every 2 s. Each assignment below hands every chart and
+        // figure a new object to recompute from, so skip unchanged reads.
+        property string lastText: ""
         stdout: StdioCollector {
             onStreamFinished: {
+                if (text === analyticsReadProc.lastText) return
+                analyticsReadProc.lastText = text
                 try {
                     const data = JSON.parse(text)
                     if (data.dailyWords) state.dailyWords = data.dailyWords

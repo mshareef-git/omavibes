@@ -7,8 +7,7 @@ OUTPUT="$(cd "$ROOT/../.." && pwd)/bin/wayvibes"
 make -C "$ROOT" clean
 make -C "$ROOT"
 
-cp "$ROOT/wayvibes" "$OUTPUT"
-chmod 755 "$OUTPUT"
+install -m 755 "$ROOT/wayvibes" "$OUTPUT"
 
 echo "Built: $OUTPUT"
 sha256sum "$OUTPUT"

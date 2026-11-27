@@ -1023,10 +1023,13 @@ QtObject {
         // Polled every 2 s. Each assignment below hands every chart and
         // figure a new object to recompute from, so skip unchanged reads.
         property string lastText: ""
+        property string lastDay: ""
         stdout: StdioCollector {
             onStreamFinished: {
-                if (text === analyticsReadProc.lastText) return
-                analyticsReadProc.lastText = text
+                // Date-dependent bindings also need a refresh after midnight,
+                // even when tracking is off and the file has not changed.
+                const day = state.todayKey()
+                if (text === analyticsReadProc.lastText && day === analyticsReadProc.lastDay) return
                 try {
                     const data = JSON.parse(text)
                     if (data.dailyWords) state.dailyWords = data.dailyWords
@@ -1041,6 +1044,8 @@ QtObject {
                         state.trackingMode = data.trackingMode
                         if (data.trackingMode === "always" && !state.isPlaying) state.startAnalyticsProcess()
                     }
+                    analyticsReadProc.lastText = text
+                    analyticsReadProc.lastDay = day
                 } catch (e) {
                     console.log("OmaVibes analytics: could not read analytics state")
                 }

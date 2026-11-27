@@ -1,0 +1,119 @@
+import QtQuick
+import QtTest
+TestCase {
+ id: state
+ name: "PR6"
+ property var keyCounts: ({})
+ property var dailyWords: ({})
+ property var dailyTypingSeconds: ({})
+ property var dailyTrackedSeconds: ({})
+ property double totalKeyPresses: 0
+ property bool trackingModePreferenceLoaded: true
+ property string trackingMode: "onlyWhenSound"
+ property bool isPlaying: false
+ property int starts: 0
+ property var analyticsReadProc: ({lastText: "", lastDay: ""})
+ property double displayedTotal: lifetimeKeyPresses()
+ property var displayedTop: mostUsedKeys(3)
+ property var testClock: ({day: "2026-11-27"})
+ property double displayedToday: Number(dailyWords[todayKey()] || 0)
+ function todayKey() { return testClock.day }
+ function startAnalyticsProcess() { starts++ }
+ function readText(text) {
+__READ_HANDLER__
+ }
+__KEY_HELPERS__
+ // Reference calculations from before PR #6.
+    function oldTotal() {
+        let total = 0
+        for (const key in keyCounts)
+            total += Number(keyCounts[key] || 0)
+        return total
+    }
+
+    function oldKeyCount(keyLabel) {
+        return Number(keyCounts[String(keyLabel).toUpperCase()] || 0)
+    }
+
+    function oldTop(limit) {
+        const result = []
+        for (const key in keyCounts) {
+            const count = Number(keyCounts[key] || 0)
+            if (count > 0) result.push({ key: key, count: count })
+        }
+        result.sort(function(a, b) {
+            if (b.count !== a.count) return b.count - a.count
+            return a.key.localeCompare(b.key)
+        })
+        return result.slice(0, Math.max(0, Number(limit) || 0))
+    }
+
+
+ function init() {
+  testClock = {day: "2026-11-27"}
+  keyCounts = {}; dailyWords = {}; dailyTypingSeconds = {}; dailyTrackedSeconds = {}
+  analyticsReadProc = {lastText: "", lastDay: ""}; totalKeyPresses = 0
+  trackingModePreferenceLoaded = true; starts = 0
+ }
+ function test_empty_and_limits() {
+  compare(displayedTotal, 0); compare(displayedTop.length, 0)
+  keyCounts = {A: 4, B: 4, SPACE: 8, Z: 0}
+  compare(mostUsedKeys(2), oldTop(2))
+  for (const limit of [-1, 0, 1, 2, 100, "3", null]) compare(mostUsedKeys(limit), oldTop(limit))
+ }
+ function test_many_updates_match_original() {
+  for (let update = 0; update < 100; update++) {
+   const counts = {}
+   for (let k = 0; k < 150; k++) counts["KEY" + k] = (k * 137 + update * 59) % 999
+   keyCounts = counts
+   compare(displayedTotal, oldTotal())
+   compare(displayedTop, oldTop(3))
+   compare(mostUsedKeys(150), oldTop(150))
+  }
+ }
+ function test_reuse_and_invalidation() {
+  keyCounts = {A: 4, B: 2}
+  const sorted = keyStats().sorted
+  for (let i = 0; i < 150; i++) {
+   lifetimeKeyPresses(); mostUsedKeys(5); verify(keyStats().sorted === sorted)
+  }
+  keyCounts = {B: 9}
+  verify(keyStats().sorted !== sorted)
+  compare(displayedTotal, 9); compare(displayedTop[0].key, "B")
+ }
+ function test_unchanged_reads() {
+  const text = JSON.stringify({dailyWords: {today: 3}, keyCounts: {A: 10}})
+  readText(text)
+  const keys = keyCounts, days = dailyWords, sorted = keyStats().sorted
+  for (let i = 0; i < 100; i++) readText(text)
+  verify(keyCounts === keys); verify(dailyWords === days); verify(keyStats().sorted === sorted)
+  readText(JSON.stringify({dailyWords: {today: 4}, keyCounts: {A: 15}}))
+  compare(displayedTotal, 15); compare(dailyWords.today, 4)
+ }
+ function test_invalid_then_valid() {
+  readText('{broken')
+  compare(displayedTotal, 0)
+  readText(JSON.stringify({keyCounts: {SPACE: 12}}))
+  compare(displayedTotal, 12); compare(totalKeyPresses, 12)
+ }
+ function test_midnight_refreshes_once() {
+  const text = JSON.stringify({dailyWords: {"2026-11-27": 12}, keyCounts: {A: 10}})
+  readText(text)
+  compare(displayedToday, 12)
+  const previousDays = dailyWords
+  // Mutate a JS object to simulate time passing without notifying QML bindings.
+  testClock.day = "2026-11-28"
+  readText(text)
+  compare(displayedToday, 0)
+  verify(dailyWords !== previousDays)
+  const refreshedDays = dailyWords
+  readText(text)
+  verify(dailyWords === refreshedDays)
+  compare(displayedTotal, 10)
+ }
+ function test_tracking_preference() {
+  trackingModePreferenceLoaded = false
+  readText(JSON.stringify({trackingMode: "always", keyCounts: {A: 1}}))
+  compare(trackingMode, "always"); compare(starts, 1)
+ }
+}

@@ -39,16 +39,17 @@ const std::unordered_map<int, int> uiohookToEvdev = {
     {3597, 140}, // KEY_CALC
 
     // Numpad navigation variants (when NumLock is off or shifted)
-    {60999, 102}, // KEY_HOME
-    {61000, 103}, // KEY_UP
-    {61001, 104}, // KEY_PAGEUP
-    {61003, 105}, // KEY_LEFT
-    {61005, 106}, // KEY_RIGHT
-    {61007, 107}, // KEY_END
-    {61008, 108}, // KEY_DOWN
-    {61009, 109}, // KEY_PAGEDOWN
-    {61010, 110}, // KEY_INSERT
-    {61011, 111}, // KEY_DELETE
+    // evdev identifies the physical keypad key regardless of NumLock.
+    {60999, 71}, // KEY_KP7
+    {61000, 72}, // KEY_KP8
+    {61001, 73}, // KEY_KP9
+    {61003, 75}, // KEY_KP4
+    {61005, 77}, // KEY_KP6
+    {61007, 79}, // KEY_KP1
+    {61008, 80}, // KEY_KP2
+    {61009, 81}, // KEY_KP3
+    {61010, 82}, // KEY_KP0
+    {61011, 83}, // KEY_KPDOT
 };
 
 } // namespace

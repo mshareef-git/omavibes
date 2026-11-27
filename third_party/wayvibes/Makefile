@@ -2,7 +2,7 @@ TARGET = wayvibes
 
 SRC = src/main.cpp src/audio.cpp src/device.cpp src/config.cpp src/analytics.cpp src/secure_file.cpp
 INC = -Isrc
-CXXFLAGS = -std=c++17 -O3 -march=native $(INC)
+CXXFLAGS = -std=c++17 -O2 $(INC)
 LIBS = -levdev
 
 all: $(TARGET)

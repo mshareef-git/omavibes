@@ -10,6 +10,7 @@
 #include <unistd.h>
 
 #include <chrono>
+#include <cerrno>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -115,6 +116,9 @@ void runMainLoop(
                 &pool->voices[i]);
             if (copyRes == MA_SUCCESS) {
               pool->voiceCount++;
+            } else {
+              // Keep initialized voices contiguous if a copy cannot be made.
+              break;
             }
           }
           soundPools[filename] = std::move(pool);
@@ -165,9 +169,20 @@ void runMainLoop(
   while (true) {
     int ret = poll(&pfd, 1, 1000);
 
+    if (ret < 0) {
+      if (errno == EINTR) continue;
+      std::cerr << "Failed to poll input device" << std::endl;
+      break;
+    }
+    if (pfd.revents & (POLLHUP | POLLERR | POLLNVAL)) {
+      std::cerr << "Input device disconnected or unavailable" << std::endl;
+      break;
+    }
+
     if (ret > 0 && (pfd.revents & POLLIN)) {
       struct input_event ev{};
-      while (read(fd, &ev, sizeof(ev)) == static_cast<ssize_t>(sizeof(ev))) {
+      ssize_t bytesRead;
+      while ((bytesRead = read(fd, &ev, sizeof(ev))) == static_cast<ssize_t>(sizeof(ev))) {
         if (ev.type == EV_KEY && ev.value == 1) {
           // Play sound FIRST for lowest possible latency!
           if (!analyticsOnly) {
@@ -187,6 +202,10 @@ void runMainLoop(
             analytics.recordKeyPress(static_cast<unsigned int>(ev.code));
           }
         }
+      }
+      if (bytesRead >= 0 || (errno != EAGAIN && errno != EWOULDBLOCK && errno != EINTR)) {
+        std::cerr << "Input device stopped providing complete events" << std::endl;
+        break;
       }
     }
 

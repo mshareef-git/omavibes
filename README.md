@@ -305,9 +305,24 @@ omarchy restart shell
 
 Rebuild the bundled Wayvibes runtime when changing its source:
 
+Building requires a C++17 compiler, `make`, `libevdev`, and the
+`nlohmann-json` development headers. The release workflow installs these
+dependencies separately; a JSON library copy is not bundled in the source.
+
 ```bash
 ./third_party/wayvibes/build.sh
 ```
+
+Run the regression checks after rebuilding:
+
+```bash
+python3 tests/test_audio.py
+python3 tests/test_analytics.py
+```
+
+The audio checks use a simulated keyboard and temporary state files, without
+accessing a real keyboard or playing sounds. The analytics checks require
+Qt 6 `qmltestrunner` and the QtTest QML module.
 
 ### Before Publishing
 

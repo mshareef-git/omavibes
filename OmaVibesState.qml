@@ -182,6 +182,7 @@ QtObject {
             const userPackDir = shellQuote(state.userPacksDir + packFolder)
 
             const launchCmd =
+                "export PIPEWIRE_LATENCY=\"64/48000\" PULSE_LATENCY_MSEC=1; " +
                 "BIN=" + pluginBin + "; " +
                 "PACK_DIR=" + pluginPackDir + "; " +
                 "[ -d " + userPackDir + " ] && PACK_DIR=" + userPackDir + "; " +
